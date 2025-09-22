@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Database - Default to Aiven PostgreSQL
-    database_url: str = "postgresql://avnadmin:AVNS_8dOpRsLGGzmJF6bjBwm@pix-verse-ip6ofme-c71c.j.aivencloud.com:12317/defaultdb?sslmode=require"
+    database_url: str = ""
     
     # OpenAI
     openai_api_key: str = ""
