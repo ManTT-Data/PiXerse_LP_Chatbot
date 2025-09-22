@@ -1,0 +1,26 @@
+# -------- Core --------
+fastapi>=0.115,<0.120
+uvicorn[standard]>=0.31.1,<0.33
+anyio>=4.6,<5
+
+# -------- Database --------
+sqlalchemy>=2.0.23,<2.1
+psycopg2-binary==2.9.9
+alembic>=1.12,<1.14
+
+# -------- MCP --------
+mcp>=1.14,<2.0
+
+# -------- OpenAI --------
+openai>=1.3.8,<1.30
+
+# -------- Data Validation --------
+pydantic>=2.11,<3
+pydantic-settings>=2.5.2,<3
+
+# -------- Environment --------
+python-dotenv>=1.0,<1.1
+
+# -------- HTTP --------
+python-multipart>=0.0.6,<0.1
+httpx>=0.25.2
