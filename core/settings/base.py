@@ -1,16 +1,17 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 import os
+from pydantic import SecretStr
 
 
 class Settings(BaseSettings):
     """Application settings"""
     
-    # Database - Default to Aiven PostgreSQL
-    database_url: str = ""
+    # Database
+    database_url: SecretStr = os.getenv("DATABASE_URL", "sqlite:///./test.db")
     
     # OpenAI
-    openai_api_key: str = ""
+    openai_api_key: SecretStr = os.getenv("OPENAI_API_KEY", "")
     
     # Application
     debug: bool = True
