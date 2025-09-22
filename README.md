@@ -73,7 +73,7 @@ Tạo file `.env`:
 
 ```env
 # Database Configuration
-DATABASE_URL=postgresql://username:password@localhost:5432/pixerse_mcp_db
+DATABASE_URL=
 
 # OpenAI Configuration
 OPENAI_API_KEY=your-openai-api-key-here
