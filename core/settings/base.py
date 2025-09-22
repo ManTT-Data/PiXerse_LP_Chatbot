@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Database
-    database_url: SecretStr = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+    database_url: SecretStr = os.getenv("DATABASE_URL", "")
     
     # OpenAI
     openai_api_key: SecretStr = os.getenv("OPENAI_API_KEY", "")
@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     port: int = 8000
     
     # Security
-    secret_key: str = "your_secret_key_here"
-    
+    secret_key: SecretStr = os.getenv("SECRET_KEY", "your_secret_key_here")
+
     # Logging
     log_level: str = "INFO"
     
