@@ -7,7 +7,6 @@ from pydantic import SecretStr
 class Settings(BaseSettings):
     """Application settings"""
     
-    # Database
     database_url: SecretStr = os.getenv("DATABASE_URL", "")
     
     # OpenAI
