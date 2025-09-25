@@ -13,7 +13,7 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
-env_path = Path(__file__).parent.parent / "config" / ".env"
+env_path = Path(__file__).parent.parent.parent / ".env"
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -22,16 +22,16 @@ class Settings(BaseSettings):
     
     # OpenAI
     OPENAI_API_KEY: SecretStr = SecretStr("")
-    OPENAI_MODEL: str = "gpt-4o-mini"
-    OPENAI_TIMEOUT: float = 10.0
+    OPENAI_MODEL: str = ""
+    OPENAI_TIMEOUT: float = 0.0
 
     # Application
-    environment: str = "local"
-    debug: bool = True
-    host: str = "0.0.0.0"
-    port: int = 8000
+    environment: str = ""
+    debug: bool = False
+    host: str = ""
+    port: int = 0
     # quantity of workers for uvicorn
-    workers_count: int = 1
+    workers_count: int = 0
 
     log_level: LogLevel = LogLevel.INFO
     
@@ -39,26 +39,35 @@ class Settings(BaseSettings):
     secret_key: SecretStr = SecretStr("")
     
     # CORS
-    allowed_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000"
-    backend_cors_origins_str: str = "http://localhost,http://127.0.0.1,https://localhost,https://127.0.0.1"
+    allowed_origins: str = ""
+    backend_cors_origins_str: str = ""
     
     # Sentry's configuration.
     sentry_dsn: Optional[str] = None
-    sentry_sample_rate: float = 1.0
+    sentry_sample_rate: float = 0.0
 
     # ✅ Declare constant as ClassVar
     DEFAULT_LANGUAGE_CODE: ClassVar[str] = "en"
 
-    reload: bool = True if environment == "local" else False
+    reload: bool = False
 
-    MCP_SERVER_CONFIG_PATH: Path = Path("core/config/server_config.json")
+    MCP_SERVER_CONFIG_PATH: str = ""
 
     DB_URL: str = ""
 
     @property
     def backend_cors_origins(self) -> List[str]:
         """Parse backend CORS origins from comma-separated string"""
+        if not self.backend_cors_origins_str:
+            return []
         return [origin.strip() for origin in self.backend_cors_origins_str.split(",") if origin.strip()]
+    
+    @property 
+    def mcp_server_config_path(self) -> Path:
+        """Convert MCP server config path string to Path object"""
+        if not self.MCP_SERVER_CONFIG_PATH:
+            return Path("core/config/server_config.json")
+        return Path(self.MCP_SERVER_CONFIG_PATH)
 
     model_config = SettingsConfigDict(
         env_file=str(env_path),

@@ -59,7 +59,7 @@ class MCP_ChatBot:
         Loads the server config file and connects to all defined MCP servers.
         """
         try:
-            config_path = settings.MCP_SERVER_CONFIG_PATH
+            config_path = settings.mcp_server_config_path
 
             if not config_path.exists():
                 print(f"server_config.json not found at {config_path}")
