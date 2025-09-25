@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mcp-server": {
+      "command": "python",
+      "args": ["-m", "core.services.MCP_chatbot.mcp_tools"],
+      "cwd": "."
+    }
+  }
+}
