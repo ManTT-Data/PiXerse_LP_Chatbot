@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import ClassVar, List, Optional
 
-from pydantic import EmailStr, SecretStr
+from pydantic import EmailStr, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LogLevel(str, Enum):
@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     
     # CORS
     allowed_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000"
+    backend_cors_origins_str: str = "http://localhost,http://127.0.0.1,https://localhost,https://127.0.0.1"
     
     # Sentry's configuration.
     sentry_dsn: Optional[str] = None
@@ -54,19 +55,16 @@ class Settings(BaseSettings):
 
     DB_URL: str = ""
 
-    backend_cors_origins: List[str] = [
-        "http://localhost",
-        "http://127.0.0.1",
-        "https://localhost",
-        "https://127.0.0.1",
-        "https://*.hrforce.ai",
-        "https://*.cvtot.vn",
-    ]
+    @property
+    def backend_cors_origins(self) -> List[str]:
+        """Parse backend CORS origins from comma-separated string"""
+        return [origin.strip() for origin in self.backend_cors_origins_str.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(
         env_file=str(env_path),
         env_file_encoding="utf-8",
         extra="ignore",  # Ignore extra fields
+        case_sensitive=False,  # Allow lowercase env vars
     )
 
 

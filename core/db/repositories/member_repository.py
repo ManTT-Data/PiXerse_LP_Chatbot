@@ -13,7 +13,7 @@ class MemberRepository:
         db: AsyncSession,
         member_id: int,
     ) -> Optional[Member]:
-        result = await db.execute(select(Member).where(Member.id == member_id))
+        result = await db.execute(select(Member).where(Member.member_id == member_id))
         return result.scalar_one_or_none()
 
     @staticmethod
@@ -24,7 +24,7 @@ class MemberRepository:
         offset: int = 0,
     ) -> List[Member]:
         result = await db.execute(
-            select(Member.member_name, Member.member_id, Member.summary)
+            select(Member)
             .limit(limit)
             .offset(offset),
         )

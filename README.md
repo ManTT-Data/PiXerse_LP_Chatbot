@@ -20,27 +20,40 @@ venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-### 2. Configure Database
+### 2. Database Setup
 
-```bash
-# Create PostgreSQL database
-createdb pixerse_mcp_db
+This project uses **Aiven PostgreSQL** cloud database. The database schema and sample data are automatically created on first run.
 
-# Or using psql
-psql -U postgres -c "CREATE DATABASE pixerse_mcp_db;"
-```
+**Database Features:**
+- ✅ Production-ready Aiven PostgreSQL
+- ✅ Async SQLAlchemy with proper relationships  
+- ✅ Auto-created schema with sample data
+- ✅ 9 MCP tools for database queries
 
 ### 3. Environment Variables
 
-Copy `core/config/.env.template` to `core/config/.env` and fill:
+Copy `env.example` to `.env` and configure your credentials:
 
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/pixerse_mcp_db
-OPENAI_API_KEY=your_openai_api_key_here
-DEBUG=True
-HOST=0.0.0.0
-PORT=8000
+```bash
+cp env.example .env
 ```
+
+Edit `.env` file with your actual values:
+```env
+# Database (Aiven PostgreSQL)
+DATABASE_URL=postgresql+asyncpg://username:password@host:port/database
+DB_URL=postgresql+asyncpg://username:password@host:port/database
+
+# OpenAI
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Security
+SECRET_KEY=your-super-secret-key-here
+
+# Other configurations...
+```
+
+**IMPORTANT**: Never commit `.env` files to git!
 
 ### 5. Run Application
 
@@ -72,18 +85,28 @@ curl -X POST "http://localhost:8000/chat" \
   }'
 ```
 
-## 🛠️ MCP Tools Available
+## 🛠️ MCP Tools Available (9 Tools)
 
+### 📁 Project Tools
 | Tool | Description |
 |------|-------------|
-| `projects_list` | List all projects |
-| `projects_get` | Get project by ID |
-| `members_search` | Search team members |
-| `members_get` | Get member details |
-| `blogs_list` | List blog posts |
-| `blogs_get` | Get blog content |
-| `assets_search` | Search assets |
-| `assets_get` | Get asset details |
+| `get_project_by_id` | Get detailed project information by ID |
+| `get_projects_description` | List all projects with descriptions |
+| `get_projects_by_keywords` | Search projects by keyword in description |
+
+### 👥 Member Tools
+| Tool | Description |
+|------|-------------|
+| `get_member_by_id` | Get detailed member information by ID |
+| `get_members_description` | List all team members with summaries |
+| `get_members_by_skill_keyword` | Search members by skills/expertise |
+
+### 📝 Blog Tools
+| Tool | Description |
+|------|-------------|
+| `get_blog_by_id` | Get detailed blog content by ID |
+| `get_blogs_description` | List all blogs with content previews |
+| `get_blogs_by_keyword` | Search blogs by keyword in content |
 
 ## 📁 Project Structure
 

@@ -23,7 +23,7 @@ class BlogRepository:
         offset: int = 0,
     ) -> List[Blog]:
         result = await db.execute(
-            select(Blog.blog_title, Blog.blog_id, Blog.blog_content)
+            select(Blog)
             .limit(limit)
             .offset(offset),
         )
@@ -39,7 +39,7 @@ class BlogRepository:
         like_pattern = f"%{keyword.lower()}%"
         result = await db.execute(
             select(Blog)
-            .where(Blog.blog_content.ilike(like_pattern))
+            .where(Blog.content.ilike(like_pattern))
             .limit(limit)
             .offset(offset),
         )

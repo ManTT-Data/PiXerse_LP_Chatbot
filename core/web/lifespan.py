@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from core.services.MCP_chatbot.chatbot_service import MCP_ChatBot
 from core.settings import settings
+from core.db.meta import create_tables, test_db_connection
 
 @asynccontextmanager
 async def lifespan_setup(
@@ -21,13 +22,24 @@ async def lifespan_setup(
 
     app.middleware_stack = None
 
+    # Test database connection
+    print("🔍 Testing database connection...")
+    await test_db_connection()
+    
+    # Create database tables
+    print("🏗️ Creating database tables...")
+    await create_tables()
+
     # Setup MCP Chatbot
+    print("🤖 Setting up MCP Chatbot...")
     global chatbot
     chatbot = MCP_ChatBot()
     await chatbot.connect_to_servers()
     app.state.chatbot = chatbot
 
-    # await _create_tables()
     app.middleware_stack = app.build_middleware_stack()
+    print("✅ Application startup completed!")
 
     yield
+    
+    print("🔄 Application shutdown completed!")

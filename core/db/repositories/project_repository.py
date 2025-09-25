@@ -23,7 +23,7 @@ class ProjectRepository:
         offset: int = 0,
     ) -> List[Project]:
         result = await db.execute(
-            select(Project.project_name, Project.project_id, Project.project_description)
+            select(Project)
             .limit(limit)
             .offset(offset),
         )
@@ -39,7 +39,7 @@ class ProjectRepository:
         like_pattern = f"%{keyword.lower()}%"
         result = await db.execute(
             select(Project)
-            .where(Project.project_description.ilike(like_pattern))
+            .where(Project.description.ilike(like_pattern))
             .limit(limit)
             .offset(offset),
         )
