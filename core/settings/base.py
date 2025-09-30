@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     
     database_url: SecretStr = SecretStr("")
     
+    # MongoDB
+    MONGODB_URL: SecretStr = SecretStr("")
+    MONGODB_DB_NAME: str = ""
+    MONGODB_COLLECTION_NAME: str = ""
+    MONGODB_TIMEOUT: int = 0
+    
     # OpenAI
     OPENAI_API_KEY: SecretStr = SecretStr("")
     OPENAI_MODEL: str = ""

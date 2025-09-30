@@ -22,13 +22,21 @@ pip install -r requirements.txt
 
 ### 2. Database Setup
 
-This project uses **Aiven PostgreSQL** cloud database. The database schema and sample data are automatically created on first run.
+This project uses **two databases**:
 
-**Database Features:**
+**PostgreSQL (Aiven)** - For structured data:
 - ✅ Production-ready Aiven PostgreSQL
 - ✅ Async SQLAlchemy with proper relationships  
 - ✅ Auto-created schema with sample data
 - ✅ 9 MCP tools for database queries
+- 📁 Stores: Projects, Members, Blogs, Assets
+
+**MongoDB Atlas** - For chat history:
+- ✅ Cloud-hosted MongoDB for chat sessions
+- ✅ Async Motor driver for high performance
+- ✅ Auto-connection on startup
+- ✅ RESTful API endpoints for chat management
+- 💬 Stores: Chat sessions, messages, user interactions
 
 ### 3. Environment Variables
 
@@ -40,9 +48,15 @@ cp env.example .env
 
 Edit `.env` file with your actual values:
 ```env
-# Database (Aiven PostgreSQL)
+# PostgreSQL Database (Aiven)
 DATABASE_URL=postgresql+asyncpg://username:password@host:port/database
 DB_URL=postgresql+asyncpg://username:password@host:port/database
+
+# MongoDB Database (Atlas) - for chat history
+MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/
+MONGODB_DB_NAME=PiXerse_ChatBot
+MONGODB_COLLECTION_NAME=chat_sessions
+MONGODB_TIMEOUT=5000
 
 # OpenAI
 OPENAI_API_KEY=sk-your-openai-api-key-here
@@ -107,6 +121,58 @@ curl -X POST "http://localhost:8000/chat" \
 | `get_blog_by_id` | Get detailed blog content by ID |
 | `get_blogs_description` | List all blogs with content previews |
 | `get_blogs_by_keyword` | Search blogs by keyword in content |
+
+## 💬 Chat History API Endpoints
+
+RESTful API for managing chat sessions and retrieving conversation history:
+
+### Create Chat Session
+```bash
+POST /api/chat-history/sessions
+Content-Type: application/json
+
+{
+  "session_id": "unique_session_id",
+  "user_id": "user_123",
+  "message": "Hello!",
+  "response": "Hi there!",
+  "action": "chat"
+}
+```
+
+### Get Session by ID
+```bash
+GET /api/chat-history/sessions/{session_id}
+```
+
+### Update Session Response
+```bash
+PATCH /api/chat-history/sessions/{session_id}/response
+Content-Type: application/json
+
+{
+  "response": "Updated response"
+}
+```
+
+### Get User Sessions
+```bash
+GET /api/chat-history/users/{user_id}/sessions?limit=50&skip=0&action=chat
+```
+
+### Get Chat History (Formatted)
+```bash
+# Text format
+GET /api/chat-history/users/{user_id}/history?format=text&limit=10
+
+# JSON format
+GET /api/chat-history/users/{user_id}/history?format=json&limit=10
+```
+
+### Delete User Sessions
+```bash
+DELETE /api/chat-history/users/{user_id}/sessions
+```
 
 ## 📁 Project Structure
 

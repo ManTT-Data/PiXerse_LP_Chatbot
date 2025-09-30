@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from core.services.MCP_chatbot.chatbot_service import MCP_ChatBot
 from core.settings import settings
 from core.db.meta import create_tables, test_db_connection
+from core.db.mongodb import test_mongodb_connection, close_mongodb_connection
 
 @asynccontextmanager
 async def lifespan_setup(
@@ -22,13 +23,17 @@ async def lifespan_setup(
 
     app.middleware_stack = None
 
-    # Test database connection
-    print("🔍 Testing database connection...")
+    # Test PostgreSQL database connection
+    print("🔍 Testing PostgreSQL connection...")
     await test_db_connection()
     
     # Create database tables
     print("🏗️ Creating database tables...")
     await create_tables()
+    
+    # Test MongoDB connection
+    print("🔍 Testing MongoDB connection...")
+    await test_mongodb_connection()
 
     # Setup MCP Chatbot
     print("🤖 Setting up MCP Chatbot...")
@@ -42,4 +47,7 @@ async def lifespan_setup(
 
     yield
     
+    # Cleanup
+    print("🔄 Closing MongoDB connection...")
+    await close_mongodb_connection()
     print("🔄 Application shutdown completed!")

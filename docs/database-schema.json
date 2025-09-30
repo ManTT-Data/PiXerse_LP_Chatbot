@@ -1,0 +1,408 @@
+{
+  "project": {
+    "name": "pixerse-backend",
+    "framework": "Strapi",
+    "version": "5.24.0",
+    "language": "TypeScript",
+    "database": {
+      "supported": ["PostgreSQL", "MySQL", "SQLite"],
+      "primary": "PostgreSQL",
+      "driver": "pg@8.8.0"
+    }
+  },
+  "api": {
+    "baseUrl": "http://localhost:1337/api",
+    "adminUrl": "http://localhost:1337/admin",
+    "docsUrl": "http://localhost:1337/documentation"
+  },
+  "contentTypes": {
+    "user": {
+      "collection": "up_users",
+      "endpoint": "/api/users",
+      "draftAndPublish": false,
+      "plugin": "users-permissions",
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "username": { "type": "string", "required": true, "unique": true, "minLength": 3 },
+        "email": { "type": "email", "required": true, "minLength": 6 },
+        "password": { "type": "password", "required": false, "minLength": 6, "private": true },
+        "provider": { "type": "string", "required": false },
+        "confirmed": { "type": "boolean", "required": false, "default": false },
+        "blocked": { "type": "boolean", "required": false, "default": false },
+        "resetPasswordToken": { "type": "string", "required": false, "private": true },
+        "confirmationToken": { "type": "string", "required": false, "private": true },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "role": {
+          "type": "manyToOne",
+          "target": "plugin::users-permissions.role",
+          "inversedBy": "users"
+        },
+        "blogs": {
+          "type": "oneToMany",
+          "target": "api::blog.blog",
+          "mappedBy": "users_permissions_user"
+        }
+      }
+    },
+    "blog": {
+      "collection": "blogs",
+      "endpoint": "/api/blogs",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "title": { "type": "string", "required": false },
+        "content": { "type": "richtext", "required": false },
+        "featured_image": { 
+          "type": "media", 
+          "required": false, 
+          "multiple": false,
+          "allowedTypes": ["images", "files", "videos", "audios"]
+        },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "users_permissions_user": {
+          "type": "manyToOne",
+          "target": "plugin::users-permissions.user",
+          "inversedBy": "blogs"
+        },
+        "Project": {
+          "type": "manyToOne",
+          "target": "api::project.project",
+          "inversedBy": "blogs"
+        },
+        "categories": {
+          "type": "oneToMany",
+          "target": "api::category.category",
+          "mappedBy": "Blog"
+        },
+        "tags": {
+          "type": "manyToMany",
+          "target": "api::tag.tag",
+          "inversedBy": "blogs",
+          "joinTable": "blogs_tags_links"
+        },
+        "authors": {
+          "type": "oneToMany",
+          "target": "api::author.author",
+          "mappedBy": "Blog"
+        }
+      }
+    },
+    "category": {
+      "collection": "categories",
+      "endpoint": "/api/categories",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "Blog": {
+          "type": "manyToOne",
+          "target": "api::blog.blog",
+          "inversedBy": "categories"
+        }
+      }
+    },
+    "tag": {
+      "collection": "tags",
+      "endpoint": "/api/tags",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "blogs": {
+          "type": "manyToMany",
+          "target": "api::blog.blog",
+          "mappedBy": "tags",
+          "joinTable": "blogs_tags_links"
+        }
+      }
+    },
+    "author": {
+      "collection": "authors",
+      "endpoint": "/api/authors",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "Blog": {
+          "type": "manyToOne",
+          "target": "api::blog.blog",
+          "inversedBy": "authors"
+        }
+      }
+    },
+    "project": {
+      "collection": "projects",
+      "endpoint": "/api/projects",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "description": { "type": "text", "required": false },
+        "url": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "technologies": {
+          "type": "manyToMany",
+          "target": "api::technology.technology",
+          "inversedBy": "projects",
+          "joinTable": "projects_technologies_links"
+        },
+        "blogs": {
+          "type": "oneToMany",
+          "target": "api::blog.blog",
+          "mappedBy": "Project"
+        },
+        "members": {
+          "type": "manyToMany",
+          "target": "api::member.member",
+          "mappedBy": "projects",
+          "joinTable": "members_projects_links"
+        }
+      }
+    },
+    "technology": {
+      "collection": "technologies",
+      "endpoint": "/api/technologies",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "projects": {
+          "type": "manyToMany",
+          "target": "api::project.project",
+          "mappedBy": "technologies",
+          "joinTable": "projects_technologies_links"
+        }
+      }
+    },
+    "member": {
+      "collection": "members",
+      "endpoint": "/api/members",
+      "draftAndPublish": true,
+      "fields": {
+        "id": { "type": "integer", "required": true, "unique": true },
+        "name": { "type": "string", "required": false },
+        "summary": { "type": "text", "required": false },
+        "role": { "type": "string", "required": false },
+        "team_type": { "type": "string", "required": false },
+        "publishedAt": { "type": "datetime", "required": false },
+        "createdAt": { "type": "datetime", "required": true, "auto": true },
+        "updatedAt": { "type": "datetime", "required": true, "auto": true }
+      },
+      "relations": {
+        "projects": {
+          "type": "manyToMany",
+          "target": "api::project.project",
+          "inversedBy": "members",
+          "joinTable": "members_projects_links"
+        }
+      }
+    }
+  },
+  "relationships": {
+    "oneToMany": [
+      {
+        "from": "user",
+        "to": "blog",
+        "description": "Một user có thể tạo nhiều blog"
+      },
+      {
+        "from": "project",
+        "to": "blog",
+        "description": "Một project có thể có nhiều blog"
+      },
+      {
+        "from": "blog",
+        "to": "category",
+        "description": "Một blog có thể có nhiều categories"
+      },
+      {
+        "from": "blog",
+        "to": "author",
+        "description": "Một blog có thể có nhiều authors"
+      }
+    ],
+    "manyToMany": [
+      {
+        "entities": ["blog", "tag"],
+        "joinTable": "blogs_tags_links",
+        "description": "Nhiều blog có thể có nhiều tags"
+      },
+      {
+        "entities": ["project", "technology"],
+        "joinTable": "projects_technologies_links",
+        "description": "Nhiều project sử dụng nhiều technologies"
+      },
+      {
+        "entities": ["project", "member"],
+        "joinTable": "members_projects_links",
+        "description": "Nhiều project có nhiều members"
+      }
+    ]
+  },
+  "authentication": {
+    "endpoints": {
+      "register": {
+        "method": "POST",
+        "path": "/api/auth/local/register",
+        "body": {
+          "username": "string",
+          "email": "string",
+          "password": "string"
+        }
+      },
+      "login": {
+        "method": "POST",
+        "path": "/api/auth/local",
+        "body": {
+          "identifier": "string",
+          "password": "string"
+        }
+      }
+    },
+    "tokenType": "JWT",
+    "headerFormat": "Bearer <token>"
+  },
+  "queryParameters": {
+    "populate": {
+      "description": "Populate relations",
+      "examples": [
+        "populate=*",
+        "populate[field]=*",
+        "populate[field][populate]=nestedField"
+      ]
+    },
+    "filters": {
+      "description": "Filter results",
+      "operators": [
+        "$eq", "$ne", "$in", "$notIn",
+        "$lt", "$lte", "$gt", "$gte",
+        "$contains", "$notContains",
+        "$containsi", "$notContainsi",
+        "$startsWith", "$endsWith",
+        "$null", "$notNull",
+        "$between",
+        "$or", "$and"
+      ],
+      "examples": [
+        "filters[title][$contains]=keyword",
+        "filters[publishedAt][$notNull]=true"
+      ]
+    },
+    "sort": {
+      "description": "Sort results",
+      "examples": [
+        "sort=createdAt:desc",
+        "sort[0]=title:asc&sort[1]=createdAt:desc"
+      ]
+    },
+    "pagination": {
+      "description": "Paginate results",
+      "parameters": {
+        "page": "Page number",
+        "pageSize": "Items per page (default: 25, max: 100)",
+        "start": "Offset",
+        "limit": "Limit"
+      },
+      "examples": [
+        "pagination[page]=1&pagination[pageSize]=10",
+        "pagination[start]=0&pagination[limit]=10"
+      ]
+    },
+    "publicationState": {
+      "description": "Filter by publication state",
+      "values": ["live", "preview"],
+      "examples": [
+        "publicationState=live"
+      ]
+    }
+  },
+  "connectionExamples": {
+    "nodejs_pg": {
+      "description": "Direct PostgreSQL connection using pg library",
+      "code": "const { Pool } = require('pg');\nconst pool = new Pool({\n  host: 'localhost',\n  port: 5432,\n  database: 'strapi',\n  user: 'strapi',\n  password: 'strapi'\n});"
+    },
+    "axios": {
+      "description": "HTTP client for Strapi REST API",
+      "code": "const axios = require('axios');\nconst response = await axios.get('http://localhost:1337/api/blogs?populate=*');"
+    },
+    "fetch": {
+      "description": "Native fetch API",
+      "code": "const response = await fetch('http://localhost:1337/api/blogs?populate=*');\nconst data = await response.json();"
+    }
+  },
+  "usefulQueries": {
+    "getAllBlogsWithRelations": {
+      "method": "GET",
+      "url": "/api/blogs?populate[users_permissions_user][fields][0]=username&populate[Project][fields][0]=name&populate[categories]=*&populate[tags]=*&populate[authors]=*&populate[featured_image]=*"
+    },
+    "searchBlogs": {
+      "method": "GET",
+      "url": "/api/blogs?filters[$or][0][title][$containsi]=keyword&filters[$or][1][content][$containsi]=keyword&filters[publishedAt][$notNull]=true"
+    },
+    "getProjectWithDetails": {
+      "method": "GET",
+      "url": "/api/projects/:id?populate[technologies]=*&populate[members]=*&populate[blogs][populate]=featured_image"
+    },
+    "getPublishedOnly": {
+      "method": "GET",
+      "url": "/api/blogs?publicationState=live&sort=createdAt:desc"
+    }
+  },
+  "environmentVariables": {
+    "required": [
+      "DATABASE_CLIENT",
+      "DATABASE_HOST",
+      "DATABASE_PORT",
+      "DATABASE_NAME",
+      "DATABASE_USERNAME",
+      "DATABASE_PASSWORD"
+    ],
+    "optional": [
+      "DATABASE_URL",
+      "DATABASE_SCHEMA",
+      "DATABASE_SSL",
+      "DATABASE_POOL_MIN",
+      "DATABASE_POOL_MAX",
+      "DATABASE_CONNECTION_TIMEOUT"
+    ]
+  },
+  "notes": [
+    "Hầu hết content types đều có Draft & Publish enabled, cần check publishedAt field",
+    "Auto-generated fields: id, createdAt, updatedAt được tự động tạo bởi Strapi",
+    "Luôn sử dụng ?populate=* hoặc specify relations để lấy đầy đủ data",
+    "Media files được lưu trên Cloudinary, trả về URL trong response",
+    "Default pagination pageSize=25, maximum=100",
+    "Strapi tự động tạo join tables cho many-to-many relationships"
+  ]
+}
