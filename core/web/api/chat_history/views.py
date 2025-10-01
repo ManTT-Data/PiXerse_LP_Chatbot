@@ -3,17 +3,15 @@ API endpoints for chat history management
 """
 
 from fastapi import APIRouter, HTTPException, Query, Path
-from typing import List, Optional
+from typing import List
 import logging
 
 from core.schemas.chat_schemas import (
-    ChatSession,
     ChatSessionCreate,
     ChatSessionResponse,
-    ChatHistoryResponse,
     UpdateResponseRequest
 )
-from core.db.repositories.chat_repository import ChatRepository
+from core.services.chat_service import ChatService
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +30,10 @@ async def create_chat_session(session: ChatSessionCreate):
     - **timestamp**: Message timestamp (optional, auto-generated if not provided)
     """
     try:
-        result = await ChatRepository.save_session(session)
+        result = await ChatService.create_session(session)
         return result
     except Exception as e:
-        logger.error(f"Error creating chat session: {e}")
+        logger.error(f"Error in create_chat_session endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 
@@ -47,14 +45,14 @@ async def get_chat_session(
     Get a specific chat session by ID
     """
     try:
-        session = await ChatRepository.get_session_by_id(session_id)
+        session = await ChatService.get_session_by_id(session_id)
         if not session:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
         return session
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving session: {e}")
+        logger.error(f"Error in get_chat_session endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve session: {str(e)}")
 
 
@@ -67,14 +65,14 @@ async def update_session_response(
     Update bot response for a session
     """
     try:
-        success = await ChatRepository.update_session_response(session_id, request.response)
+        success = await ChatService.update_session_response(session_id, request.response)
         if not success:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
         return {"message": "Response updated successfully", "session_id": session_id}
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating session response: {e}")
+        logger.error(f"Error in update_session_response endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update response: {str(e)}")
 
 
@@ -92,14 +90,10 @@ async def get_user_sessions(
     - **skip**: Number of sessions to skip (for pagination)
     """
     try:
-        sessions = await ChatRepository.get_user_sessions(
-            user_id=user_id,
-            limit=limit,
-            skip=skip
-        )
+        sessions = await ChatService.get_user_sessions(user_id, limit, skip)
         return sessions
     except Exception as e:
-        logger.error(f"Error retrieving user sessions: {e}")
+        logger.error(f"Error in get_user_sessions endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve sessions: {str(e)}")
 
 
@@ -123,25 +117,10 @@ async def get_user_chat_history(
     ```
     """
     try:
-        if format == "text":
-            history = await ChatRepository.get_chat_history(user_id, limit)
-            return {
-                "user_id": user_id,
-                "format": "text",
-                "history": history
-            }
-        else:  # json format
-            sessions = await ChatRepository.get_user_sessions(user_id, limit=limit)
-            history_text = await ChatRepository.get_chat_history(user_id, limit)
-            return {
-                "user_id": user_id,
-                "format": "json",
-                "total_sessions": len(sessions),
-                "sessions": sessions,
-                "formatted_history": history_text
-            }
+        result = await ChatService.get_user_chat_history(user_id, limit, format)
+        return result
     except Exception as e:
-        logger.error(f"Error retrieving chat history: {e}")
+        logger.error(f"Error in get_user_chat_history endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve history: {str(e)}")
 
 
@@ -157,14 +136,10 @@ async def get_recent_sessions(
     - **n**: Number of sessions (1-10, default: 3)
     """
     try:
-        sessions = await ChatRepository.get_recent_sessions(user_id, n)
-        return {
-            "user_id": user_id,
-            "count": len(sessions),
-            "sessions": sessions
-        }
+        result = await ChatService.get_recent_sessions(user_id, n)
+        return result
     except Exception as e:
-        logger.error(f"Error retrieving recent sessions: {e}")
+        logger.error(f"Error in get_recent_sessions endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve sessions: {str(e)}")
 
 
@@ -176,11 +151,8 @@ async def delete_user_sessions(
     Delete all chat sessions for a user (use with caution!)
     """
     try:
-        deleted_count = await ChatRepository.delete_user_sessions(user_id)
-        return {
-            "message": f"Deleted {deleted_count} sessions for user {user_id}",
-            "deleted_count": deleted_count
-        }
+        result = await ChatService.delete_user_sessions(user_id)
+        return result
     except Exception as e:
-        logger.error(f"Error deleting user sessions: {e}")
+        logger.error(f"Error in delete_user_sessions endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete sessions: {str(e)}")

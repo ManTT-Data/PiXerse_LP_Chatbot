@@ -55,7 +55,7 @@ class Blog(StrapiBase):
     locale = Column(String(10), nullable=True)
     
     # Relationships (using Strapi link tables)
-    users = relationship("UpUser", secondary="blogs_users_permissions_user_lnk", backref="blogs")
+    # Note: blogs_users_permissions_user_lnk table doesn't exist in current database
     project = relationship("Project", secondary="blogs_project_lnk", backref="blogs", uselist=False)
     categories = relationship("Category", secondary="categories_blog_lnk", backref="blogs")
     authors = relationship("Author", secondary="authors_blog_lnk", backref="blogs")
@@ -192,16 +192,6 @@ members_projects_lnk = Table(
     Column('project_id', Integer, ForeignKey('projects.id')),
     Column('member_ord', Integer, nullable=True),
     Column('project_ord', Integer, nullable=True)
-)
-
-blogs_users_permissions_user_lnk = Table(
-    'blogs_users_permissions_user_lnk',
-    strapi_metadata,
-    Column('id', Integer, primary_key=True),
-    Column('blog_id', Integer, ForeignKey('blogs.id')),
-    Column('user_id', Integer, ForeignKey('up_users.id')),
-    Column('blog_ord', Integer, nullable=True),
-    Column('user_ord', Integer, nullable=True)
 )
 
 blogs_project_lnk = Table(

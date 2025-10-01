@@ -24,7 +24,6 @@ class StrapiBlogRepository:
             result = await db.execute(
                 select(Blog)
                 .options(
-                    selectinload(Blog.users),
                     selectinload(Blog.project),
                     selectinload(Blog.tags),
                     selectinload(Blog.categories),
