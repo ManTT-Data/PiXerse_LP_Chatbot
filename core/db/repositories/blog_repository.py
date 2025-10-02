@@ -21,13 +21,13 @@ class BlogRepository:
         db: AsyncSession,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Blog]:
+    ) -> List[Tuple]:
         result = await db.execute(
-            select(Blog)
+            select(Blog.blog_id, Blog.title, Blog.content)
             .limit(limit)
             .offset(offset),
         )
-        return result.scalars().all()
+        return result.all()
 
     @staticmethod
     async def get_blogs_by_keywords(

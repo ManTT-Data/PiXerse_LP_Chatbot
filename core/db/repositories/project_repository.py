@@ -21,13 +21,13 @@ class ProjectRepository:
         db: AsyncSession,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Project]:
+    ) -> List[Tuple]:
         result = await db.execute(
-            select(Project)
+            select(Project.project_id, Project.project_name, Project.description)
             .limit(limit)
             .offset(offset),
         )
-        return result.scalars().all()
+        return result.all()
 
     @staticmethod
     async def get_projects_by_keywords(

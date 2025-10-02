@@ -22,16 +22,10 @@ async def lifespan_setup(
 
     app.middleware_stack = None
 
-    # Test database connection
-    print("🔍 Testing database connection...")
     await test_db_connection()
     
-    # Create database tables
-    print("🏗️ Creating database tables...")
     await create_tables()
 
-    # Setup MCP Chatbot
-    print("🤖 Setting up MCP Chatbot...")
     global chatbot
     chatbot = MCP_ChatBot()
     await chatbot.connect_to_servers()

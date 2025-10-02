@@ -19,16 +19,15 @@ class MemberRepository:
     @staticmethod
     async def get_members_description(
         db: AsyncSession,
-        status: str,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Member]:
+    ) -> List[Tuple]:
         result = await db.execute(
-            select(Member)
+            select(Member.member_id, Member.member_name, Member.role, Member.summary)
             .limit(limit)
             .offset(offset),
         )
-        return result.scalars().all()
+        return result.all()
 
     @staticmethod
     async def get_members_by_skill_keyword(

@@ -95,7 +95,7 @@ class Asset(Base):
     
     # Relationships
     # project_assets = relationship("ProjectAsset", back_populates="asset")
-    # blog_assets = relationship("BlogAsset", back_populates="asset")
+    # blog_assets = relationship("BlogAsset", back_populates="asset_id")
     # member_assets = relationship("MemberAsset", back_populates="asset")
 
 
