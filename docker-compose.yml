@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pixerse-chatbot
+    ports:
+      - "7860:7860"
+    environment:
+      # Database connections (use your actual credentials)
+      DATABASE_URL: ${DATABASE_URL}
+      DB_URL: ${DB_URL}
+      MONGODB_URL: ${MONGODB_URL}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-PiXerse_ChatBot}
+      MONGODB_COLLECTION_NAME: ${MONGODB_COLLECTION_NAME:-chat_sessions}
+      MONGODB_TIMEOUT: ${MONGODB_TIMEOUT:-5000}
+      
+      # AI Services
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      
+      # Application settings
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY}
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-7860}
+      
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      
+      # Rate limiting
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+      
+      # MCP
+      MCP_SERVER_NAME: ${MCP_SERVER_NAME:-mcp-server}
+      MCP_TIMEOUT: ${MCP_TIMEOUT:-30}
+      
+    volumes:
+      # Mount for development (uncomment for hot-reload)
+      # - .:/app
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:7860/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - pixerse-network
+
+networks:
+  pixerse-network:
+    driver: bridge
+
+# Note: This docker-compose uses external PostgreSQL and MongoDB
+# Make sure to set the DATABASE_URL and MONGODB_URL in your .env file
+
