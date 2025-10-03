@@ -13,7 +13,11 @@ from core.constants.openai_constants import (
 )
 from core.log_handler import logger
 from core.schemas.chatbot_schemas import ToolResponse
+from core.services.History_message.session_chat_service import ChatService
 from core.settings.base import settings
+import uuid
+from datetime import datetime
+from core.schemas.session_chat_schemas import ChatSessionCreate
 
 
 class MCP_ChatBot:
@@ -84,20 +88,71 @@ class MCP_ChatBot:
     async def process_query(
         self,
         query: str,
+        user_id: str = None,
+        include_history: bool = True,
+        history_limit: int = 10,
     ) -> Tuple[str, int, List[str], List[Dict[str, Any]]]:
         """
-        Main method to handle a user query:
-        - Sends the message to OpenAI Chat API
-        - If tools are required, calls them via MCP
-        - Collects tool responses and returns final output
+        Args:
+            query (str): User's query/message
+            user_id (str, optional): User ID to retrieve chat history
+            include_history (bool): Whether to include chat history in context
+            history_limit (int): Maximum number of historical messages to include
         """
+
+        session_id = f"session_{uuid.uuid4().hex}"
+        
+        # Save user message to database first
+        try:
+            session_data = ChatSessionCreate(
+                session_id=session_id,
+                user_id=user_id,
+                message=query,
+                response=None,  # Will be updated after getting bot response
+                timestamp=datetime.utcnow()
+            )
+            
+            await ChatService.create_session(session_data)
+            logger.info(f"Saved user message for session {session_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to save user message: {e}")
+
+        # Initialize chat messages with system prompt
         chatbot_messages = [
             {
                 "role": "system",
-                "content": (SYSTEM_PROMPT),
+                "content": SYSTEM_PROMPT,
             },
-            {"role": "user", "content": query},
         ]
+        
+        # Add chat history if user_id is provided and include_history is True
+        if user_id and include_history:
+            try:
+                chat_history = await ChatService.get_user_chat_history(
+                    user_id=user_id,
+                    limit=history_limit,
+                    format="text"
+                )
+                
+                history_text = chat_history.get("history", "")
+                if history_text:
+                    # Add history as context in system message
+                    chatbot_messages.append({
+                        "role": "system",
+                        "content": f"Previous conversation history:\n{history_text}\n\nPlease consider this context when responding to the current query."
+                    })
+                    logger.info(f"Added chat history for user {user_id} ({len(history_text)} characters)")
+                else:
+                    logger.info(f"No chat history found for user {user_id}")
+                    
+            except Exception as e:
+                logger.warning(f"Failed to retrieve chat history for user {user_id}: {e}")
+                # Continue without history if there's an error
+        
+        # Add current user query
+        chatbot_messages.append({"role": "user", "content": query})
+        session_chat = [{"role": "user", "content": query}]
         chatbot_token_usage = 0
         mcp_tools_used = []
         mcp_tools_response = []
@@ -120,13 +175,6 @@ class MCP_ChatBot:
             chatbot_message = chatbot_response.choices[0].message
             mcp_tool_calls = chatbot_message.tool_calls or []
 
-            if not mcp_tool_calls:
-                return (
-                    chatbot_message.content,
-                    chatbot_token_usage,
-                    mcp_tools_used,
-                    mcp_tools_response,
-                )
 
             # Append assistant message
             chatbot_messages.append(
@@ -136,6 +184,20 @@ class MCP_ChatBot:
                     "tool_calls": mcp_tool_calls,
                 },
             )
+
+            if not mcp_tool_calls:
+                session_chat.append({"role": "assistant", "content": chatbot_message.content})
+                try:
+                    await ChatService.update_session_response(session_id, session_chat)
+                    logger.info(f"Updated bot response for session {session_id}")
+                except Exception as e:
+                    logger.error(f"Failed to update bot response: {e}")
+                return (
+                    chatbot_message.content,
+                    chatbot_token_usage,
+                    mcp_tools_used,
+                    mcp_tools_response,
+                )
 
             # Process each tool call
             for tool_call in mcp_tool_calls:

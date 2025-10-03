@@ -7,8 +7,8 @@ from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorCollection
 import logging
 
-from core.db.mongodb import get_chat_collection
-from core.schemas.chat_schemas import ChatSession, ChatSessionCreate
+from core.db.mongodb.mongodb import get_chat_collection
+from core.schemas.session_chat_schemas import ChatSession, ChatSessionCreate
 
 logger = logging.getLogger(__name__)
 

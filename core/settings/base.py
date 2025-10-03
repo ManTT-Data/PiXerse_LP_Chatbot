@@ -13,7 +13,7 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
-env_path = Path(__file__).parent.parent.parent / ".env"
+env_path = Path(__file__).parent.parent / "config" / ".env"
 
 class Settings(BaseSettings):
     """Application settings"""

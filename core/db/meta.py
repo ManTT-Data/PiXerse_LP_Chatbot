@@ -1,13 +1,3 @@
-# !/usr/bin/env python
-# Copyright (C) 2025 HRForce
-#
-# All rights reserved.
-# @link hrforce.ai
-#
-# __author__ = "man.tra@cvtot.vn"
-# __date__ = "2025-09-24 11:26:49"
-#
-
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -53,12 +43,6 @@ async def get_db() -> AsyncSession:
 async def create_tables():
     """Create all database tables"""
     try:
-        from core.db.db_schemas import (
-            Project, Member, Blog, Asset, 
-            AdminUser, AdminSession, ChatSession, ChatMessage, ToolCall,
-            ProjectAsset, BlogAsset, MemberAsset
-        )
-        
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         print("✅ Database tables created successfully!")

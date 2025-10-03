@@ -8,9 +8,10 @@ router = APIRouter()
 @router.post("/chat", response_model=ChatbotResponse)
 async def chat(query: ChatbotQuery, request: Request):
     try:
-        chatbot = request.app.state.chatbot  # ✅ Lấy từ state (gán trong lifespan)
+        chatbot = request.app.state.chatbot 
         response, tokens, tools_used, tools_response = await chatbot.process_query(
             query.query,
+            user_id=query.user_id,
         )
         return {
             "response": response,

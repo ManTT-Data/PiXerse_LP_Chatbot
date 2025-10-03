@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class ChatbotQuery(BaseModel):
     query: str = Field(..., description="User query")
+    user_id: str = Field(..., description="User identifier")
 
 
 class ChatbotResponse(BaseModel):

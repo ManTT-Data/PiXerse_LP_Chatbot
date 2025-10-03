@@ -8,14 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from core.db.meta import engine
-from core.db.strapi_schemas import (
+from core.schemas.db_schemas import (
     StrapiBase, UpUser, Blog, Category, Tag, Author, Project, Technology, Member,
     blogs_tags_links, projects_technologies_links, members_projects_links
-)
-from core.db.db_schemas import (
-    Project as OldProject, 
-    Member as OldMember, 
-    Blog as OldBlog
 )
 from core.log_handler import logger
 
@@ -264,7 +259,7 @@ async def rollback_migration():
     
     try:
         # Import old schemas
-        from core.db.db_schemas import Base as OldBase
+        from core.db.base import Base as OldBase
         
         async with engine.begin() as conn:
             # Drop Strapi tables

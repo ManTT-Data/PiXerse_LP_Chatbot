@@ -2,38 +2,78 @@ from mcp.server.fastmcp import FastMCP
 from datetime import datetime
 
 from core.db.meta import async_session
-from core.db.repositories.strapi_blog_repository import StrapiBlogRepository
-from core.db.repositories.strapi_member_repository import StrapiMemberRepository
-from core.db.repositories.strapi_project_repository import StrapiProjectRepository
-from core.db.strapi_schemas import Blog, Member, Project
+from core.db.repositories.blog_repository import StrapiBlogRepository
+from core.db.repositories.member_repository import StrapiMemberRepository
+from core.db.repositories.project_repository import StrapiProjectRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine import Row, RowMapping
+from typing import Any
+from dataclasses import is_dataclass, asdict
+from collections.abc import Mapping
 
 
-def model_to_dict(obj):
-    """Convert SQLAlchemy model to dictionary"""
+
+def model_to_dict(obj: Any):
+    """Convert ORM / Row / Mapping / tuple / dataclass → dict (JSON-ready)."""
     if obj is None:
         return None
-    
-    result = {}
-    for column in obj.__table__.columns:
-        value = getattr(obj, column.name)
-        # Convert datetime to string for JSON serialization
-        if isinstance(value, datetime):
-            value = value.isoformat()
-        result[column.name] = value
-    return result
+
+    # 1) ORM instance (có __table__)
+    if hasattr(obj, "__table__"):
+        out = {}
+        for col in obj.__table__.columns:
+            val = getattr(obj, col.name)
+            out[col.name] = val.isoformat() if isinstance(val, datetime) else val
+        return out
+
+    # 2) SQLAlchemy Row/RowMapping (mọi phiên bản) — ưu tiên dùng _mapping nếu có
+    if hasattr(obj, "_mapping"):
+        d = dict(obj._mapping)
+        for k, v in d.items():
+            if isinstance(v, datetime):
+                d[k] = v.isoformat()
+        return d
+
+    # 3) Mapping python (dict, RowMapping implement Mapping)
+    if isinstance(obj, Mapping):
+        return {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in obj.items()}
+
+    # 4) Dataclass
+    if is_dataclass(obj):
+        d = asdict(obj)
+        for k, v in d.items():
+            if isinstance(v, datetime):
+                d[k] = v.isoformat()
+        return d
+
+    # 5) Tuple/List → cố gắng đoán dạng (k, v) hoặc đánh số col
+    if isinstance(obj, (tuple, list)):
+        try:
+            if all(isinstance(x, (tuple, list)) and len(x) == 2 for x in obj):
+                return {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in obj}
+        except Exception:
+            pass
+        return {f"col{i}": (v.isoformat() if isinstance(v, datetime) else v) for i, v in enumerate(obj)}
+
+    # 6) Primitive → bọc lại
+    return {"value": obj}
 
 mcp_server = FastMCP("Pixerse-mcp")
 
 
 # BLOG TOOLS
 @mcp_server.tool(
-    description="Get detailed information about a specific blog by its ID, including user, project, tags, categories, and authors.",
+    description="""
+    Get detailed information (id, title, content, author, related project, ...)
+      about a specific blog by its ID. This tool is used to retrieve more detailed 
+      information if the blog ID is already available based on the list_blogs_description tool.
+    """
 )
 async def get_blog_by_id(blog_id: int):
     """Get blog by ID with all relations"""
     async with async_session() as db:
         try:
-            blog = await StrapiBlogRepository.get_blog_by_id(db, blog_id, include_relations=True)
+            blog = await StrapiBlogRepository.get_blog_by_id(db, blog_id)
             if blog:
                 blog_dict = model_to_dict(blog)
                 # Add related data
@@ -53,13 +93,17 @@ async def get_blog_by_id(blog_id: int):
 
 
 @mcp_server.tool(
-    description="Retrieve a list of blogs with their id, title, and content summary. Supports pagination.",
+    description="""
+    Retrieve a list of all blogs with their id, title, and content. This tool can 
+    be used to get the id of all blogs, then the get_blog_by_id tool can be used to 
+    find more details of one or a few specific blogs.
+    """,
 )
-async def get_blogs_description(limit: int = 50, offset: int = 0, published_only: bool = False):
+async def list_blogs_content(limit: int = 50):
     """Get list of blogs with pagination"""
     async with async_session() as db:
         try:
-            blogs = await StrapiBlogRepository.get_all_blogs(db, limit, offset, published_only)
+            blogs = await StrapiBlogRepository.get_all_blogs_content(db, limit)
             return {
                 "success": True,
                 "count": len(blogs),
@@ -70,13 +114,16 @@ async def get_blogs_description(limit: int = 50, offset: int = 0, published_only
 
 
 @mcp_server.tool(
-    description="Search blogs by keyword in title or content. Returns matching blogs.",
+    description="""
+    Search blogs by keyword in blog content. And get detailed information (id, 
+    title, content, author, related project, ...) about matched blogs.
+    """
 )
-async def get_blogs_by_keyword(keyword: str, limit: int = 50, offset: int = 0):
+async def get_blogs_by_keyword(keyword: str, limit: int = 50):
     """Search blogs by keyword"""
     async with async_session() as db:
         try:
-            blogs = await StrapiBlogRepository.search_blogs_by_keyword(db, keyword, limit, offset)
+            blogs = await StrapiBlogRepository.search_blogs_by_keyword(db, keyword, limit)
             return {
                 "success": True,
                 "count": len(blogs),
@@ -86,33 +133,21 @@ async def get_blogs_by_keyword(keyword: str, limit: int = 50, offset: int = 0):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-
-@mcp_server.tool(
-    description="Get all blogs associated with a specific project by project ID.",
-)
-async def get_blogs_by_project(project_id: int, limit: int = 50):
-    """Get blogs by project"""
-    async with async_session() as db:
-        try:
-            blogs = await StrapiBlogRepository.get_blogs_by_project(db, project_id, limit)
-            return {
-                "success": True,
-                "project_id": project_id,
-                "count": len(blogs),
-                "data": [model_to_dict(b) for b in blogs],
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
         
 # MEMBER TOOLS
 @mcp_server.tool(
-    description="Get detailed information about a specific team member by their ID, including associated projects.",
+    description="""
+    Get detailed information (id, name, role, summary, project, avatar_url, 
+    team_type ...) about a specific member by their ID. This tool is used to 
+    retrieve more detailed information if the member ID is already available 
+    based on the list_members_description tool.
+    """
 )
 async def get_member_by_id(member_id: int):
     """Get member by ID with projects"""
     async with async_session() as db:
         try:
-            member = await StrapiMemberRepository.get_member_by_id(db, member_id, include_projects=True)
+            member = await StrapiMemberRepository.get_member_by_id(db, member_id)
             if member:
                 member_dict = model_to_dict(member)
                 # Add projects
@@ -128,13 +163,17 @@ async def get_member_by_id(member_id: int):
 
 
 @mcp_server.tool(
-    description="Retrieve a list of all team members with their id, name, role, and summary. Supports pagination.",
+    description="""
+    Retrieve a list of all members with their id, name, and summary. 
+    This tool can be used to get the id of all members, then the get_member_by_id 
+    tool can be used to find more details of one or a few specific members.
+    """
 )
-async def get_members_description(limit: int = 50, offset: int = 0, published_only: bool = False):
+async def list_members_summary(limit: int = 50):
     """Get list of members with pagination"""
     async with async_session() as db:
         try:
-            members = await StrapiMemberRepository.get_all_members(db, limit, offset, published_only)
+            members = await StrapiMemberRepository.get_all_members_summary(db, limit)
             return {
                 "success": True,
                 "count": len(members),
@@ -145,13 +184,16 @@ async def get_members_description(limit: int = 50, offset: int = 0, published_on
 
 
 @mcp_server.tool(
-    description="Search team members by keyword in name, summary, or role. Useful for finding members with specific skills or expertise.",
+    description="""
+    Search members by keyword in their summary. And get detailed information (id, 
+    name, role, summary, project, avatar_url, ...) about matched members.    
+    """
 )
-async def get_members_by_skill_keyword(keyword: str, limit: int = 50, offset: int = 0):
+async def get_members_by_keyword(keyword: str, limit: int = 50):
     """Search members by keyword"""
     async with async_session() as db:
         try:
-            members = await StrapiMemberRepository.search_members_by_keyword(db, keyword, limit, offset)
+            members = await StrapiMemberRepository.search_members_by_keyword(db, keyword, limit)
             return {
                 "success": True,
                 "count": len(members),
@@ -162,32 +204,19 @@ async def get_members_by_skill_keyword(keyword: str, limit: int = 50, offset: in
             return {"success": False, "error": str(e)}
 
 
-@mcp_server.tool(
-    description="Get all members of a specific team type (e.g., 'Development', 'Design', 'Marketing').",
-)
-async def get_members_by_team_type(team_type: str, limit: int = 50):
-    """Get members by team type"""
-    async with async_session() as db:
-        try:
-            members = await StrapiMemberRepository.get_members_by_team_type(db, team_type, limit)
-            return {
-                "success": True,
-                "team_type": team_type,
-                "count": len(members),
-                "data": [model_to_dict(m) for m in members],
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
 # PROJECT TOOLS
 @mcp_server.tool(
-    description="Get detailed information about a specific project by its ID, including technologies, members, and blogs.",
+    description="""
+    Get detailed information (id, name, description, contributor, url, ...) 
+    about a specific project by their ID. This tool is used to retrieve more detailed 
+    information if the project ID is already available based on the list_projects_description tool.
+    """
 )
 async def get_project_by_id(project_id: int):
     """Get project by ID with all relations"""
     async with async_session() as db:
         try:
-            project = await StrapiProjectRepository.get_project_by_id(db, project_id, include_relations=True)
+            project = await StrapiProjectRepository.get_project_by_id(db, project_id)
             if project:
                 project_dict = model_to_dict(project)
                 # Add related data
@@ -208,13 +237,17 @@ async def get_project_by_id(project_id: int):
 
 
 @mcp_server.tool(
-    description="Retrieve a list of all projects with their id, name, and description. Supports pagination.",
+    description="""
+    Retrieve a list of all projects with their id, name, and description. 
+    This tool can be used to get the id of all projects, then the get_project_by_id 
+    tool can be used to find more details of one or a few specific projects.
+    """
 )
-async def get_projects_description(limit: int = 50, offset: int = 0, published_only: bool = False):
+async def list_projects_description(limit: int = 50):
     """Get list of projects with pagination"""
     async with async_session() as db:
         try:
-            projects = await StrapiProjectRepository.get_all_projects(db, limit, offset, published_only)
+            projects = await StrapiProjectRepository.get_all_projects_description(db, limit)
             return {
                 "success": True,
                 "count": len(projects),
@@ -222,43 +255,7 @@ async def get_projects_description(limit: int = 50, offset: int = 0, published_o
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-
-@mcp_server.tool(
-    description="Search projects by keyword in name or description. Returns matching projects.",
-)
-async def get_projects_by_keywords(keyword: str, limit: int = 50, offset: int = 0):
-    """Search projects by keyword"""
-    async with async_session() as db:
-        try:
-            projects = await StrapiProjectRepository.search_projects_by_keyword(db, keyword, limit, offset)
-            return {
-                "success": True,
-                "count": len(projects),
-                "keyword": keyword,
-                "data": [model_to_dict(p) for p in projects],
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-
-@mcp_server.tool(
-    description="Get all projects that use a specific technology by technology ID.",
-)
-async def get_projects_by_technology(technology_id: int, limit: int = 50):
-    """Get projects by technology"""
-    async with async_session() as db:
-        try:
-            projects = await StrapiProjectRepository.get_projects_by_technology(db, technology_id, limit)
-            return {
-                "success": True,
-                "technology_id": technology_id,
-                "count": len(projects),
-                "data": [model_to_dict(p) for p in projects],
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
+        
 
 if __name__ == "__main__":
     mcp_server.run(transport="stdio")

@@ -6,16 +6,16 @@ from fastapi import APIRouter, HTTPException, Query, Path
 from typing import List
 import logging
 
-from core.schemas.chat_schemas import (
+from core.schemas.session_chat_schemas import (
     ChatSessionCreate,
     ChatSessionResponse,
     UpdateResponseRequest
 )
-from core.services.chat_service import ChatService
+from core.services.History_message.session_chat_service import ChatService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/chat-history", tags=["Chat History"])
+router = APIRouter(prefix="/session-chat", tags=["Chat History"])
 
 
 @router.post("/sessions", response_model=ChatSessionResponse, status_code=201)

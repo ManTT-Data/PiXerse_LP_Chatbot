@@ -6,7 +6,7 @@ from typing import List, Optional
 import logging
 
 from core.db.repositories.chat_repository import ChatRepository
-from core.schemas.chat_schemas import ChatSessionCreate
+from core.schemas.session_chat_schemas import ChatSessionCreate
 
 logger = logging.getLogger(__name__)
 
